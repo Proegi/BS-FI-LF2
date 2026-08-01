@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Werkstattauftrag – PC-Konfiguration · Lernfeld 2</title>
+<style>
+:root{
+  --paper:#E4E6E1;
+  --card:#FAFAF8;
+  --card-2:#F1F2EE;
+  --ink:#15181B;
+  --ink-2:#5C6169;
+  --ink-3:#8A8F95;
+  --line:#C7CAC3;
+  --line-2:#DEE0DA;
+  --pink:#D6437E;
+  --ok:#1E6B4F;
+  --warn:#9E6A12;
+  --bad:#B32C22;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono","Cascadia Mono","Segoe UI Mono","Roboto Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.55) 0 1px,rgba(255,255,255,0) 1px 7px),
+                   repeating-linear-gradient(65deg,rgba(0,0,0,.025) 0 1px,rgba(0,0,0,0) 1px 9px);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.5;
+  padding:24px 16px 64px;
+}
+.sheet{max-width:1180px;margin:0 auto}
+
+/* ---------- Kopf des Auftragszettels ---------- */
+.head{
+  background:var(--card);
+  border:1px solid var(--ink);
+  box-shadow:5px 5px 0 rgba(21,24,27,.14);
+}
+.head-bar{
+  display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between;
+  padding:10px 18px;border-bottom:1px solid var(--ink);
+  background:var(--ink);color:var(--card);
+}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase}
+.eyebrow .dot{color:var(--pink)}
+.head-body{padding:20px 18px 18px}
+.jobno{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--pink)}
+h1{
+  font-family:var(--mono);font-weight:700;text-transform:uppercase;letter-spacing:-.01em;
+  font-size:clamp(21px,3.4vw,32px);line-height:1.1;margin:4px 0 10px;
+}
+.customer{color:var(--ink-2);max-width:62ch;margin:0 0 18px}
+.meta{display:flex;flex-wrap:wrap;gap:0;border-top:1px solid var(--line-2)}
+.meta div{padding:10px 18px 10px 0;margin-right:22px;border-right:1px solid var(--line-2);padding-right:22px}
+.meta div:last-child{border-right:0}
+.meta dt{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:0}
+.meta dd{font-family:var(--mono);font-size:17px;margin:2px 0 0;font-variant-numeric:tabular-nums}
+.switcher{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+label.sw{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--card)}
+select{
+  font-family:var(--mono);font-size:12px;background:var(--card);color:var(--ink);
+  border:1px solid var(--card);padding:5px 8px;max-width:100%;
+}
+.reqs{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:6px}
+.reqs li{display:flex;gap:10px;font-size:14px;align-items:baseline}
+.reqs li::before{content:"▸";color:var(--pink);font-size:12px}
+
+/* ---------- Zweispalter ---------- */
+.cols{display:grid;grid-template-columns:1fr 316px;gap:22px;margin-top:22px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+
+/* ---------- Bauteil-Zeilen ---------- */
+.slot{background:var(--card);border:1px solid var(--line);margin-bottom:8px}
+.slot.filled{border-color:var(--ink)}
+.slot-btn{
+  display:grid;grid-template-columns:150px 1fr auto;gap:14px;align-items:center;width:100%;
+  background:none;border:0;padding:12px 14px;text-align:left;cursor:pointer;font:inherit;color:inherit;
+}
+@media(max-width:620px){.slot-btn{grid-template-columns:1fr;gap:4px}}
+.slot-btn:hover{background:var(--card-2)}
+.slot-btn:focus-visible{outline:2px solid var(--pink);outline-offset:-2px}
+.slot-kind{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.slot.filled .slot-kind{color:var(--pink)}
+.slot-pick{font-weight:600}
+.slot-pick.empty{color:var(--ink-3);font-weight:400;font-style:italic}
+.slot-spec{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);margin-top:2px}
+.slot-price{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14px;white-space:nowrap}
+.slot-open{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+
+.parts{border-top:1px dashed var(--line);padding:4px 0 8px;display:none}
+.slot.open .parts{display:block}
+.part{
+  display:grid;grid-template-columns:1fr auto;gap:12px;width:100%;background:none;border:0;
+  border-bottom:1px solid var(--line-2);padding:9px 14px;text-align:left;cursor:pointer;font:inherit;color:inherit;
+}
+.part:last-child{border-bottom:0}
+.part:hover{background:var(--card-2)}
+.part:focus-visible{outline:2px solid var(--pink);outline-offset:-2px}
+.part[aria-pressed="true"]{background:#F7E4EC;box-shadow:inset 3px 0 0 var(--pink)}
+.part-name{font-weight:600;font-size:14px}
+.part-specs{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);margin-top:3px;line-height:1.45}
+.part-price{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14px;white-space:nowrap;align-self:center}
+
+/* ---------- Prüfprotokoll ---------- */
+.pane{background:var(--card);border:1px solid var(--ink);position:sticky;top:16px}
+@media(max-width:900px){.pane{position:static}}
+.pane h2{
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  margin:0;padding:9px 14px;background:var(--ink);color:var(--card);font-weight:500;
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+}
+.pane section{padding:14px;border-bottom:1px solid var(--line-2)}
+.gauge{margin-bottom:12px}
+.gauge:last-child{margin-bottom:0}
+.gauge-top{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.gauge-val{font-family:var(--mono);font-size:15px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.bar{height:9px;background:var(--card-2);border:1px solid var(--line);margin-top:5px;position:relative;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ink);transition:width .25s ease}
+.bar.over i{background:var(--bad)}
+.checks{list-style:none;margin:0;padding:0}
+.checks li{display:grid;grid-template-columns:16px 1fr;gap:9px;padding:5px 0;font-size:13px;align-items:start;border-bottom:1px dotted var(--line-2)}
+.checks li:last-child{border-bottom:0}
+.mark{font-family:var(--mono);font-size:13px;line-height:1.35;text-align:center}
+.st-ok .mark{color:var(--ok)}
+.st-bad .mark{color:var(--bad)}
+.st-open .mark{color:var(--ink-3)}
+.st-open{color:var(--ink-3)}
+.check-note{font-family:var(--mono);font-size:11px;color:var(--bad);display:block;margin-top:2px}
+.st-ok .check-note{color:var(--ok)}
+.pane-foot{padding:14px}
+.btn{
+  font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  width:100%;padding:12px;background:var(--pink);color:#fff;border:1px solid var(--pink);cursor:pointer;
+}
+.btn:hover{background:#B93469;border-color:#B93469}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.ghost{background:none;color:var(--ink);border-color:var(--line);margin-top:8px}
+.btn.ghost:hover{background:var(--card-2)}
+.toggle{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:none;color:var(--card);display:flex;gap:6px;align-items:center;cursor:pointer}
+.toggle input{accent-color:var(--pink);margin:0}
+
+/* ---------- Abnahme ---------- */
+.result{margin-top:22px;background:var(--card);border:1px solid var(--ink);box-shadow:5px 5px 0 rgba(21,24,27,.14);display:none}
+.result.show{display:block}
+.result-head{display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;align-items:center;padding:20px;border-bottom:1px solid var(--line-2)}
+.stamp{
+  font-family:var(--mono);font-weight:700;font-size:clamp(19px,3vw,27px);letter-spacing:.06em;text-transform:uppercase;
+  border:3px double currentColor;padding:8px 18px;transform:rotate(-4.5deg);
+  animation:slam .32s cubic-bezier(.2,1.5,.4,1) both;
+}
+.stamp.pass{color:var(--ok)}
+.stamp.fail{color:var(--bad)}
+@keyframes slam{from{transform:rotate(-4.5deg) scale(1.7);opacity:0}to{transform:rotate(-4.5deg) scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){.stamp{animation:none}.bar i{transition:none}}
+.verdict{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--ink-2);max-width:46ch}
+.verdict b{color:var(--ink)}
+.findings{list-style:none;margin:0;padding:20px;display:grid;gap:12px}
+.finding{display:grid;grid-template-columns:22px 1fr;gap:10px;font-size:14px;padding-bottom:12px;border-bottom:1px solid var(--line-2)}
+.finding:last-child{border-bottom:0;padding-bottom:0}
+.finding .mark{font-size:15px}
+.finding h3{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 3px;font-weight:600}
+.finding p{margin:0;color:var(--ink-2);font-size:13.5px}
+.abgabe{padding:0 20px 20px}
+.abgabe textarea{
+  width:100%;min-height:150px;font-family:var(--mono);font-size:11.5px;line-height:1.6;
+  background:var(--card-2);border:1px solid var(--line);padding:12px;color:var(--ink);resize:vertical;
+}
+.foot{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--ink-3);text-align:center;margin-top:26px;line-height:1.8}
+@media print{
+  body{background:#fff;padding:0}
+  .parts,.pane-foot,.switcher,.abgabe{display:none!important}
+  .head,.result,.pane{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="head">
+    <div class="head-bar">
+      <span class="eyebrow">Werkstattauftrag <span class="dot">·</span> LF 2 <span class="dot">·</span> Arbeitsplätze ausstatten</span>
+      <div class="switcher">
+        <label class="sw" for="jobsel">Auftrag</label>
+        <select id="jobsel"></select>
+      </div>
+    </div>
+    <div class="head-body">
+      <div class="jobno" id="jobno"></div>
+      <h1 id="jobtitle"></h1>
+      <p class="customer" id="jobtext"></p>
+      <dl class="meta" id="jobmeta"></dl>
+      <ul class="reqs" id="jobreqs"></ul>
+    </div>
+  </header>
+
+  <div class="cols">
+    <main id="slots"></main>
+    <aside>
+      <div class="pane">
+        <h2>Prüfprotokoll
+          <span class="toggle"><input type="checkbox" id="live" checked><label for="live">Sofort&shy;feedback</label></span>
+        </h2>
+        <section id="gauges"></section>
+        <section><ul class="checks" id="checks"></ul></section>
+        <div class="pane-foot">
+          <button class="btn" id="abnahme">Abnahme prüfen</button>
+          <button class="btn ghost" id="reset">Auftrag zurücksetzen</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="result" id="result"></div>
+
+  <p class="foot">
+    Beispielpreise (Stand 2025) – im Quelltext im Abschnitt <b>DATEN</b> anpassbar.<br>
+    Läuft offline im Browser, keine Anmeldung, keine Datenübertragung.
+  </p>
+</div>
+
+<script>
+/* ============================================================
+   DATEN – hier Bauteile, Preise und Aufträge anpassen
+   ============================================================ */
+
+const KINDS = [
+  {key:"cpu",     label:"Prozessor"},
+  {key:"mb",      label:"Mainboard"},
+  {key:"ram",     label:"Arbeitsspeicher"},
+  {key:"gpu",     label:"Grafikkarte"},
+  {key:"ssd",     label:"Datenträger"},
+  {key:"cooler",  label:"CPU-Kühler"},
+  {key:"psu",     label:"Netzteil"},
+  {key:"case",    label:"Gehäuse"}
+];
+
+const PARTS = {
+cpu:[
+ {id:"c1",n:"AMD Ryzen 5 8500G",p:145,socket:"AM5",ram:"DDR5",cores:6,tdp:65,igpu:4,single:70,multi:55},
+ {id:"c2",n:"Intel Core i3-14100",p:115,socket:"LGA1700",ram:"DDR5",cores:4,tdp:60,igpu:3,single:70,multi:38},
+ {id:"c3",n:"Intel Core i5-14400",p:175,socket:"LGA1700",ram:"DDR5",cores:10,tdp:65,igpu:3,single:74,multi:62},
+ {id:"c4",n:"AMD Ryzen 5 5600",p:95,socket:"AM4",ram:"DDR4",cores:6,tdp:65,igpu:0,single:64,multi:50},
+ {id:"c5",n:"AMD Ryzen 7 9700X",p:340,socket:"AM5",ram:"DDR5",cores:8,tdp:65,igpu:2,single:92,multi:78},
+ {id:"c6",n:"AMD Ryzen 7 9800X3D",p:520,socket:"AM5",ram:"DDR5",cores:8,tdp:120,igpu:2,single:95,multi:80},
+ {id:"c7",n:"Intel Core i7-14700K",p:390,socket:"LGA1700",ram:"DDR5",cores:20,tdp:190,igpu:4,single:90,multi:92},
+ {id:"c8",n:"AMD Ryzen 9 9950X",p:620,socket:"AM5",ram:"DDR5",cores:16,tdp:170,igpu:2,single:96,multi:100}
+],
+mb:[
+ {id:"m1",n:"A620M (Micro-ATX)",p:85,socket:"AM5",ram:"DDR5",slots:2,maxram:64,form:"mATX",out:2},
+ {id:"m2",n:"B650 (ATX)",p:165,socket:"AM5",ram:"DDR5",slots:4,maxram:128,form:"ATX",out:2},
+ {id:"m3",n:"X670E (ATX)",p:320,socket:"AM5",ram:"DDR5",slots:4,maxram:192,form:"ATX",out:1},
+ {id:"m4",n:"B650I (Mini-ITX)",p:210,socket:"AM5",ram:"DDR5",slots:2,maxram:96,form:"ITX",out:2},
+ {id:"m5",n:"B760M (Micro-ATX)",p:120,socket:"LGA1700",ram:"DDR5",slots:4,maxram:128,form:"mATX",out:3},
+ {id:"m6",n:"Z790 (ATX)",p:250,socket:"LGA1700",ram:"DDR5",slots:4,maxram:192,form:"ATX",out:2},
+ {id:"m7",n:"H610M (Micro-ATX)",p:75,socket:"LGA1700",ram:"DDR4",slots:2,maxram:64,form:"mATX",out:3},
+ {id:"m8",n:"B550M (Micro-ATX)",p:80,socket:"AM4",ram:"DDR4",slots:4,maxram:128,form:"mATX",out:2}
+],
+ram:[
+ {id:"r1",n:"8 GB DDR5-5600",p:30,type:"DDR5",gb:8,mods:1},
+ {id:"r2",n:"16 GB DDR5-5600 (2×8)",p:55,type:"DDR5",gb:16,mods:2},
+ {id:"r3",n:"32 GB DDR5-6000 (2×16)",p:105,type:"DDR5",gb:32,mods:2},
+ {id:"r4",n:"64 GB DDR5-5600 (2×32)",p:210,type:"DDR5",gb:64,mods:2},
+ {id:"r5",n:"128 GB DDR5-5200 (4×32)",p:430,type:"DDR5",gb:128,mods:4},
+ {id:"r6",n:"16 GB DDR4-3200 (2×8)",p:38,type:"DDR4",gb:16,mods:2},
+ {id:"r7",n:"32 GB DDR4-3200 (2×16)",p:70,type:"DDR4",gb:32,mods:2}
+],
+gpu:[
+ {id:"g0",n:"Keine – interne Grafik nutzen",p:0,vram:0,len:0,tdp:0,score:0,enc:false},
+ {id:"g1",n:"Intel Arc A310 4 GB",p:110,vram:4,len:150,tdp:30,score:12,enc:true},
+ {id:"g2",n:"GeForce RTX 4060 8 GB",p:300,vram:8,len:200,tdp:115,score:45,enc:true},
+ {id:"g3",n:"Radeon RX 7600 8 GB",p:260,vram:8,len:205,tdp:165,score:42,enc:true},
+ {id:"g4",n:"GeForce RTX 4070 Super 12 GB",p:620,vram:12,len:285,tdp:220,score:70,enc:true},
+ {id:"g5",n:"Radeon RX 7900 XT 20 GB",p:750,vram:20,len:320,tdp:315,score:82,enc:true},
+ {id:"g6",n:"GeForce RTX 4080 Super 16 GB",p:1050,vram:16,len:310,tdp:320,score:90,enc:true},
+ {id:"g7",n:"Workstation-Karte 12 GB",p:620,vram:12,len:170,tdp:70,score:35,enc:true,cert:true}
+],
+ssd:[
+ {id:"s1",n:"500 GB NVMe (PCIe 4.0)",p:45,gb:500,iface:"M.2",read:3600,w:6,typ:"SSD"},
+ {id:"s2",n:"1 TB NVMe (PCIe 4.0)",p:75,gb:1000,iface:"M.2",read:5000,w:7,typ:"SSD"},
+ {id:"s3",n:"2 TB NVMe (PCIe 4.0)",p:140,gb:2000,iface:"M.2",read:7000,w:8,typ:"SSD"},
+ {id:"s4",n:"4 TB NVMe (PCIe 4.0)",p:290,gb:4000,iface:"M.2",read:7000,w:9,typ:"SSD"},
+ {id:"s5",n:"1 TB SATA-SSD",p:65,gb:1000,iface:"SATA",read:550,w:3,typ:"SSD"},
+ {id:"s6",n:"2 TB HDD (7200 min⁻¹)",p:55,gb:2000,iface:"SATA",read:190,w:8,typ:"HDD"}
+],
+cooler:[
+ {id:"k1",n:"Boxed-Kühler (Lieferumfang)",p:0,sockets:["AM5","AM4","LGA1700"],maxtdp:65,h:55,rad:0,db:32},
+ {id:"k2",n:"Tower-Kühler 120 mm",p:35,sockets:["AM5","AM4","LGA1700"],maxtdp:150,h:155,rad:0,db:25},
+ {id:"k3",n:"Tower-Kühler 2×140 mm",p:75,sockets:["AM5","AM4","LGA1700"],maxtdp:250,h:165,rad:0,db:27},
+ {id:"k4",n:"Low-Profile-Kühler",p:45,sockets:["AM5","AM4","LGA1700"],maxtdp:95,h:47,rad:0,db:29},
+ {id:"k5",n:"Wasserkühlung 240 mm (AiO)",p:110,sockets:["AM5","LGA1700"],maxtdp:250,h:0,rad:240,db:30},
+ {id:"k6",n:"Wasserkühlung 360 mm (AiO)",p:160,sockets:["AM5","LGA1700"],maxtdp:350,h:0,rad:360,db:32}
+],
+psu:[
+ {id:"p1",n:"400 W 80 PLUS Bronze",p:45,w:400,eff:"Bronze",form:"ATX"},
+ {id:"p2",n:"550 W 80 PLUS Bronze",p:60,w:550,eff:"Bronze",form:"ATX"},
+ {id:"p3",n:"650 W 80 PLUS Gold",p:85,w:650,eff:"Gold",form:"ATX"},
+ {id:"p4",n:"850 W 80 PLUS Gold",p:120,w:850,eff:"Gold",form:"ATX"},
+ {id:"p5",n:"1000 W 80 PLUS Platinum",p:190,w:1000,eff:"Platinum",form:"ATX"},
+ {id:"p6",n:"450 W 80 PLUS Gold (SFX)",p:95,w:450,eff:"Gold",form:"SFX"}
+],
+case:[
+ {id:"h1",n:"Mini-ITX-Würfel",p:75,forms:["ITX"],gpulen:180,coolh:130,rad:240,psu:"SFX",vol:12,damp:false},
+ {id:"h2",n:"Slim-Desktop (SFF)",p:65,forms:["mATX","ITX"],gpulen:200,coolh:60,rad:0,psu:"ATX",vol:14,damp:false},
+ {id:"h3",n:"Micro-ATX gedämmt",p:70,forms:["mATX","ITX"],gpulen:320,coolh:158,rad:240,psu:"ATX",vol:38,damp:true},
+ {id:"h4",n:"Midi-Tower ATX",p:90,forms:["ATX","mATX","ITX"],gpulen:360,coolh:165,rad:280,psu:"ATX",vol:48,damp:false},
+ {id:"h5",n:"Midi-Tower ATX Airflow",p:120,forms:["ATX","mATX","ITX"],gpulen:400,coolh:175,rad:360,psu:"ATX",vol:52,damp:false},
+ {id:"h6",n:"Big-Tower ATX",p:180,forms:["ATX","mATX","ITX"],gpulen:450,coolh:190,rad:360,psu:"ATX",vol:70,damp:false}
+]};
+
+/* Kurzbeschreibung je Bauteil für die Auswahlliste */
+const SPEC = {
+ cpu:x=>`${x.socket} · ${x.cores} Kerne · ${x.tdp} W · interne Grafik: ${x.igpu?x.igpu+" Anzeigen":"nein"} · ${x.ram}`,
+ mb:x=>`${x.socket} · ${x.ram} · ${x.slots} Bänke, max. ${x.maxram} GB · ${x.form} · ${x.out} Bildanschlüsse`,
+ ram:x=>`${x.type} · ${x.gb} GB auf ${x.mods} Modul${x.mods>1?"en":""}`,
+ gpu:x=>x.id==="g0"?"keine Zusatzkarte · 0 W":`${x.vram} GB · ${x.len} mm · ${x.tdp} W · Encoder: ${x.enc?"ja":"nein"} · Treiber: ${x.cert?"zertifiziert (CAD)":"Consumer"}`,
+ ssd:x=>`${x.typ} · ${x.gb>=1000?x.gb/1000+" TB":x.gb+" GB"} · ${x.iface} · ${x.read} MB/s`,
+ cooler:x=>`bis ${x.maxtdp} W · ${x.rad?"Radiator "+x.rad+" mm":"Bauhöhe "+x.h+" mm"} · ca. ${x.db} dB(A)`,
+ psu:x=>`${x.w} W · 80 PLUS ${x.eff} · Bauform ${x.form}`,
+ case:x=>`${x.forms.join("/")} · GraKa ≤ ${x.gpulen} mm · Kühler ≤ ${x.coolh} mm · ${x.rad?"Radiator ≤ "+x.rad+" mm":"kein Radiator"} · Netzteil ${x.psu} · ${x.vol} l${x.damp?" · gedämmt":""}`
+};
+
+/* ---- Aufträge ---- */
+const JOBS = [
+{
+ no:"A-2401", title:"Büroarbeitsplatz Steuerkanzlei", budget:500,
+ kunde:"Die Kanzlei ersetzt zwölf alte Rechner. Gearbeitet wird mit DATEV, Office und Browser, jeweils an zwei Bildschirmen. Die Geräte stehen im Beratungsraum und sollen dort nicht auffallen – weder optisch noch akustisch.",
+ reqs:[
+  {t:"Mindestens 16 GB Arbeitsspeicher", f:(b,c)=>b.ram && b.ram.gb>=16},
+  {t:"Zwei Bildschirme ohne Zusatzkarte", f:(b,c)=>b.gpu && b.gpu.id==="g0" && c.disp>=2,
+   why:"Die Grafikeinheit steckt in der CPU, die Buchsen sitzen am Mainboard – nutzbar ist nur, was beide hergeben."},
+  {t:"SSD als Systemlaufwerk", f:(b,c)=>b.ssd && b.ssd.typ==="SSD"},
+  {t:"Gehäusevolumen höchstens 40 l", f:(b,c)=>b.case && b.case.vol<=40},
+  {t:"Höchstens 30 dB(A) im Betrieb", f:(b,c)=>b.cooler && b.case && c.db<=30}
+ ]
+},
+{
+ no:"A-2402", title:"Kassen-PC Einzelhandel", budget:560,
+ kunde:"Ein Bioladen braucht einen Rechner für die Kassensoftware. Das Gerät läuft von 7 bis 20 Uhr durch, steht unter der Theke und hat dort kaum Platz. Der Betreiber achtet auf den Stromverbrauch.",
+ reqs:[
+  {t:"Gehäusevolumen höchstens 20 l", f:(b,c)=>b.case && b.case.vol<=20},
+  {t:"Leistungsaufnahme höchstens 140 W", f:(b,c)=>c.watt>0 && c.watt<=140},
+  {t:"Keine dedizierte Grafikkarte", f:(b,c)=>b.gpu && b.gpu.id==="g0" && c.disp>=1},
+  {t:"Netzteil mind. 80 PLUS Gold (Dauerbetrieb)", f:(b,c)=>b.psu && ["Gold","Platinum"].includes(b.psu.eff)},
+  {t:"SSD statt Festplatte", f:(b,c)=>b.ssd && b.ssd.typ==="SSD"}
+ ]
+},
+{
+ no:"A-2403", title:"Gaming-PC Privatkunde", budget:1500,
+ kunde:"Ein Kunde möchte aktuelle Titel in 2560 × 1440 flüssig spielen. Beleuchtung und Optik sind ihm egal, die Bildrate nicht. Er fragt ausdrücklich, ob das Budget ausgereizt werden muss.",
+ reqs:[
+  {t:"Grafikleistung mind. 65 Punkte", f:(b,c)=>b.gpu && b.gpu.score>=65,
+   why:"Für 1440p mit hohen Details reicht eine Einsteigerkarte nicht."},
+  {t:"CPU-Einzelkernleistung mind. 88 Punkte", f:(b,c)=>b.cpu && b.cpu.single>=88,
+   why:"Spiele hängen überwiegend an der Einzelkernleistung, nicht an der Kernzahl."},
+  {t:"Mindestens 32 GB Arbeitsspeicher", f:(b,c)=>b.ram && b.ram.gb>=32},
+  {t:"NVMe-SSD mit mind. 1 TB", f:(b,c)=>b.ssd && b.ssd.iface==="M.2" && b.ssd.gb>=1000}
+ ]
+},
+{
+ no:"A-2404", title:"Schnittplatz Mediengestaltung", budget:1400,
+ kunde:"Eine Agentur schneidet 4K-Material und rendert täglich. Das Rohmaterial liegt lokal auf dem Rechner, gearbeitet wird mit Adobe Premiere und DaVinci Resolve.",
+ reqs:[
+  {t:"Mindestens 32 GB Arbeitsspeicher", f:(b,c)=>b.ram && b.ram.gb>=32},
+  {t:"Grafikkarte mit Hardware-Encoder, mind. 8 GB", f:(b,c)=>b.gpu && b.gpu.enc && b.gpu.vram>=8,
+   why:"Der Encoder der Grafikkarte übernimmt das Ausgeben der fertigen Videodatei."},
+  {t:"NVMe-SSD mind. 2 TB und 5000 MB/s", f:(b,c)=>b.ssd && b.ssd.iface==="M.2" && b.ssd.gb>=2000 && b.ssd.read>=5000},
+  {t:"CPU-Mehrkernleistung mind. 70 Punkte", f:(b,c)=>b.cpu && b.cpu.multi>=70}
+ ]
+},
+{
+ no:"A-2405", title:"Entwicklungsrechner Homeoffice", budget:1350,
+ kunde:"Eine Softwareentwicklerin betreibt mehrere virtuelle Maschinen parallel und kompiliert große Projekte. Sie arbeitet an einem Monitor, spielt nicht und will nachts nicht vom Lüfter geweckt werden.",
+ reqs:[
+  {t:"Mindestens 64 GB Arbeitsspeicher", f:(b,c)=>b.ram && b.ram.gb>=64,
+   why:"Jede virtuelle Maschine belegt festen Arbeitsspeicher."},
+  {t:"Mindestens 12 Kerne", f:(b,c)=>b.cpu && b.cpu.cores>=12},
+  {t:"NVMe-SSD mit mind. 2 TB", f:(b,c)=>b.ssd && b.ssd.iface==="M.2" && b.ssd.gb>=2000},
+  {t:"Höchstens 29 dB(A) im Betrieb", f:(b,c)=>b.cooler && b.case && c.db<=29},
+  {t:"Netzteil mind. 80 PLUS Gold", f:(b,c)=>b.psu && ["Gold","Platinum"].includes(b.psu.eff)}
+ ]
+},
+{
+ no:"A-2406", title:"CAD-Workstation Ingenieurbüro", budget:2100,
+ kunde:"Das Büro konstruiert Baugruppen in SolidWorks und rechnet Simulationen. Der Hersteller schreibt zertifizierte Grafiktreiber und mindestens 12 GB Grafikspeicher vor.",
+ reqs:[
+  {t:"Mindestens 64 GB Arbeitsspeicher", f:(b,c)=>b.ram && b.ram.gb>=64},
+  {t:"Grafikkarte mit mind. 12 GB Speicher", f:(b,c)=>b.gpu && b.gpu.vram>=12},
+  {t:"Zertifizierte Grafiktreiber (Herstellervorgabe)", f:(b,c)=>b.gpu && b.gpu.cert===true,
+   why:"Der CAD-Hersteller gibt den Treiber vor – eine Spielekarte ist hier nicht freigegeben."},
+  {t:"CPU-Mehrkernleistung mind. 78 Punkte", f:(b,c)=>b.cpu && b.cpu.multi>=78},
+  {t:"NVMe-SSD mit mind. 1 TB", f:(b,c)=>b.ssd && b.ssd.iface==="M.2" && b.ssd.gb>=1000}
+ ]
+}
+];
+
+/* ============================================================
+   LOGIK
+   ============================================================ */
+const $ = s=>document.querySelector(s);
+let job = JOBS[0];
+let build = {cpu:null,mb:null,ram:null,gpu:null,ssd:null,cooler:null,psu:null,case:null};
+let openSlot = null;
+let live = true;
+
+function calc(){
+  const b=build;
+  let price=0; for(const k in b) if(b[k]) price+=b[k].p;
+  const watt = b.cpu||b.gpu||b.mb ?
+      (b.cpu?b.cpu.tdp:0)+(b.gpu?b.gpu.tdp:0)+(b.mb?25:0)+(b.ram?b.ram.mods*3:0)+(b.ssd?b.ssd.w:0)+15 : 0;
+  let db = b.cooler?b.cooler.db:0;
+  if(b.case && b.case.damp) db-=3;
+  if(b.gpu && b.gpu.tdp>200) db+=4;
+  const disp = (b.gpu && b.gpu.id!=="g0") ? 4
+             : (b.cpu && b.mb) ? Math.min(b.cpu.igpu, b.mb.out) : 0;
+  return {price, watt, db, disp, need:Math.ceil(watt*1.3)};
+}
+
+function checks(){
+  const b=build, c=calc(), L=[];
+  const add=(id,label,ready,pass,note)=>L.push({id,label,state:!ready?"open":(pass?"ok":"bad"),note});
+
+  add("sockel","Sockel CPU ↔ Mainboard", b.cpu&&b.mb, b.cpu&&b.mb&&b.cpu.socket===b.mb.socket,
+      b.cpu&&b.mb?`${b.cpu.socket} ≠ ${b.mb.socket}`:"");
+  add("ramtyp","Speichertyp", b.ram&&b.mb, b.ram&&b.mb&&b.ram.type===b.mb.ram,
+      b.ram&&b.mb?`${b.ram.type} passt nicht in ${b.mb.ram}-Bänke`:"");
+  add("rambest","Speicherbestückung", b.ram&&b.mb, b.ram&&b.mb&&b.ram.mods<=b.mb.slots&&b.ram.gb<=b.mb.maxram,
+      b.ram&&b.mb?`${b.ram.mods} Module / ${b.ram.gb} GB, Board: ${b.mb.slots} Bänke / max. ${b.mb.maxram} GB`:"");
+  add("form","Formfaktor Mainboard ↔ Gehäuse", b.mb&&b.case, b.mb&&b.case&&b.case.forms.includes(b.mb.form),
+      b.mb&&b.case?`${b.mb.form} passt nicht in ${b.case.forms.join("/")}`:"");
+  add("gpulen","Einbaulänge Grafikkarte", b.gpu&&b.case, b.gpu&&b.case&&b.gpu.len<=b.case.gpulen,
+      b.gpu&&b.case?`${b.gpu.len} mm > ${b.case.gpulen} mm`:"");
+  add("kuehl","Kühler: Sockel und Kühlleistung", b.cooler&&b.cpu,
+      b.cooler&&b.cpu&&b.cooler.sockets.includes(b.cpu.socket)&&b.cooler.maxtdp>=b.cpu.tdp,
+      b.cooler&&b.cpu?(!b.cooler.sockets.includes(b.cpu.socket)?`kein Halter für ${b.cpu.socket}`:`ausgelegt bis ${b.cooler.maxtdp} W, CPU gibt ${b.cpu.tdp} W ab`):"");
+  add("kuehlbau","Kühler: Einbaumaß", b.cooler&&b.case,
+      b.cooler&&b.case&&(b.cooler.rad? b.case.rad>=b.cooler.rad : b.cooler.h<=b.case.coolh),
+      b.cooler&&b.case?(b.cooler.rad?`Radiator ${b.cooler.rad} mm, Gehäuse nimmt ${b.case.rad||0} mm auf`:`${b.cooler.h} mm > ${b.case.coolh} mm`):"");
+  add("bild","Bildausgabe vorhanden", b.cpu&&b.mb&&b.gpu, c.disp>=1,
+      b.cpu&&b.mb&&b.gpu?(b.cpu.igpu===0?"CPU hat keine interne Grafik und es steckt keine Grafikkarte im System":"Mainboard hat keinen Bildanschluss"):"");
+  add("psuform","Netzteil-Bauform", b.psu&&b.case, b.psu&&b.case&&b.psu.form===b.case.psu,
+      b.psu&&b.case?`${b.psu.form} passt nicht in Einbauplatz ${b.case.psu}`:"");
+  add("psuw","Netzteilleistung mit Reserve", b.psu&&b.cpu&&b.mb, b.psu&&b.cpu&&b.mb&&b.psu.w>=c.need,
+      b.psu&&b.cpu&&b.mb?`empfohlen ab ${c.need} W, gewählt ${b.psu.w} W`:"");
+  add("budget","Budget eingehalten", c.price>0, c.price<=job.budget,
+      c.price>job.budget?`${c.price-job.budget} € über dem Budget`:"");
+  return L;
+}
+
+function reqStates(){
+  const c=calc();
+  return job.reqs.map(r=>({t:r.t, why:r.why||"", pass:!!r.f(build,c)}));
+}
+
+/* ============================================================
+   ANZEIGE
+   ============================================================ */
+function euro(n){return n.toLocaleString("de-DE")+" €";}
+
+function renderJob(){
+  $("#jobno").textContent="Auftrag "+job.no;
+  $("#jobtitle").textContent=job.title;
+  $("#jobtext").textContent=job.kunde;
+  $("#jobmeta").innerHTML=`
+    <div><dt>Budget</dt><dd>${euro(job.budget)}</dd></div>
+    <div><dt>Bauteile</dt><dd>${KINDS.length}</dd></div>
+    <div><dt>Anforderungen</dt><dd>${job.reqs.length}</dd></div>`;
+  $("#jobreqs").innerHTML=job.reqs.map(r=>`<li>${r.t}</li>`).join("");
+}
+
+function renderSlots(){
+  $("#slots").innerHTML = KINDS.map(k=>{
+    const sel = build[k.key];
+    const open = openSlot===k.key;
+    const list = PARTS[k.key].map(x=>`
+      <button class="part" data-kind="${k.key}" data-id="${x.id}" aria-pressed="${!!(sel&&sel.id===x.id)}">
+        <span><span class="part-name">${x.n}</span><span class="part-specs">${SPEC[k.key](x)}</span></span>
+        <span class="part-price">${euro(x.p)}</span>
+      </button>`).join("");
+    return `<div class="slot ${sel?"filled":""} ${open?"open":""}">
+      <button class="slot-btn" data-slot="${k.key}" aria-expanded="${open}">
+        <span class="slot-kind">${k.label}</span>
+        <span>
+          <span class="slot-pick ${sel?"":"empty"}">${sel?sel.n:"noch nicht gewählt"}</span>
+          ${sel?`<span class="slot-spec">${SPEC[k.key](sel)}</span>`:""}
+        </span>
+        <span><span class="slot-price">${sel?euro(sel.p):"–"}</span> <span class="slot-open">${open?"▲":"▼"}</span></span>
+      </button>
+      <div class="parts">${list}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderPane(){
+  const c=calc();
+  const pct=Math.min(100,job.budget?c.price/job.budget*100:0);
+  $("#gauges").innerHTML=`
+    <div class="gauge">
+      <div class="gauge-top"><span>Summe</span><span>Budget ${euro(job.budget)}</span></div>
+      <div class="gauge-val">${euro(c.price)}${c.price>job.budget?" ⚠":""}</div>
+      <div class="bar ${c.price>job.budget?"over":""}"><i style="width:${pct}%"></i></div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-top"><span>Leistungsaufnahme</span><span>+30 % Reserve</span></div>
+      <div class="gauge-val">${c.watt} W → ${c.need} W</div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-top"><span>Geräusch (Schätzwert)</span></div>
+      <div class="gauge-val">${build.cooler?c.db+" dB(A)":"–"}</div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-top"><span>Nutzbare Bildschirme</span></div>
+      <div class="gauge-val">${c.disp||"–"}</div>
+    </div>`;
+
+  if(!live){
+    const done=Object.values(build).filter(Boolean).length;
+    $("#checks").innerHTML=`<li class="st-open"><span class="mark">·</span><span>Sofortfeedback ist aus. ${done} von ${KINDS.length} Bauteilen gewählt – Prüfung erfolgt bei der Abnahme.</span></li>`;
+    return;
+  }
+  $("#checks").innerHTML = checks().map(k=>`
+    <li class="st-${k.state}">
+      <span class="mark">${k.state==="ok"?"✓":k.state==="bad"?"✗":"·"}</span>
+      <span>${k.label}${k.state==="bad"&&k.note?`<span class="check-note">${k.note}</span>`:""}</span>
+    </li>`).join("");
+}
+
+function render(){renderSlots();renderPane();}
+
+/* ---- Abnahme ---- */
+function abnahme(){
+  const c=calc(), ch=checks(), rq=reqStates();
+  const offen = ch.filter(k=>k.state==="open").length;
+  const compatBad = ch.filter(k=>k.state==="bad");
+  const reqBad = rq.filter(r=>!r.pass);
+  const alleGewaehlt = Object.values(build).every(Boolean);
+  const pass = alleGewaehlt && compatBad.length===0 && reqBad.length===0;
+
+  let verdict;
+  if(!alleGewaehlt){
+    verdict=`Der Auftrag ist unvollständig: <b>${KINDS.length-Object.values(build).filter(Boolean).length} Bauteil(e)</b> fehlen noch.`;
+  }else if(pass){
+    const rest=job.budget-c.price, quote=Math.round(c.price/job.budget*100);
+    verdict=`Alle Prüfpunkte bestanden, alle Kundenanforderungen erfüllt.<br>Auftragssumme <b>${euro(c.price)}</b> – das sind <b>${quote} %</b> des Budgets, Rest <b>${euro(rest)}</b>.<br>${quote<=85?"Wirtschaftlich sauber gerechnet.":"Erfüllt, aber teuer: Prüfen Sie, wo ohne Funktionsverlust gespart werden kann."}`;
+  }else{
+    verdict=`<b>${compatBad.length}</b> Prüfpunkt(e) und <b>${reqBad.length}</b> Kundenanforderung(en) sind offen. Der Rechner geht so nicht raus.`;
+  }
+
+  const findings = [
+    ...compatBad.map(k=>({bad:true,h:k.label,p:k.note||"Die gewählten Bauteile passen an dieser Stelle nicht zusammen."})),
+    ...reqBad.map(r=>({bad:true,h:"Kundenanforderung",p:r.t+(r.why?" – "+r.why:"")})),
+    ...(pass?[{bad:false,h:"Abnahme",p:"Konfiguration ist stimmig, vollständig und im Budget. Auftrag kann in die Fertigung."}]:[])
+  ];
+
+  const codeLines = KINDS.map(k=>`${k.label.padEnd(18,".")} ${build[k.key]?build[k.key].n+"  "+euro(build[k.key].p):"— fehlt"}`);
+  const code =
+`WERKSTATTAUFTRAG ${job.no} – ${job.title}
+Budget ${euro(job.budget)}
+--------------------------------------------
+${codeLines.join("\n")}
+--------------------------------------------
+Summe ${euro(c.price)} | Last ${c.watt} W (Netzteil ab ${c.need} W) | ${c.db} dB(A) | ${c.disp} Bildschirme
+Kompatibilität: ${compatBad.length===0?"bestanden":compatBad.map(k=>k.label).join("; ")}
+Anforderungen:  ${reqBad.length===0?"erfüllt":reqBad.map(r=>r.t).join("; ")}
+Ergebnis: ${pass?"ABGENOMMEN":"NICHT ABGENOMMEN"}
+Name: ______________________  Datum: __________`;
+
+  $("#result").className="result show";
+  $("#result").innerHTML=`
+    <div class="result-head">
+      <span class="stamp ${pass?"pass":"fail"}">${pass?"Abgenommen":"Nacharbeit"}</span>
+      <p class="verdict">${verdict}</p>
+    </div>
+    <ul class="findings">
+      ${findings.length?findings.map(f=>`<li class="finding ${f.bad?"st-bad":"st-ok"}">
+        <span class="mark">${f.bad?"✗":"✓"}</span>
+        <span><h3>${f.h}</h3><p>${f.p}</p></span></li>`).join(""):
+        `<li class="finding st-open"><span class="mark">·</span><span><h3>Noch nichts zu prüfen</h3><p>Wählen Sie zuerst die Bauteile aus.</p></span></li>`}
+    </ul>
+    <div class="abgabe">
+      <textarea id="code" readonly>${code}</textarea>
+      <button class="btn ghost" id="copy">Auftragsschein kopieren</button>
+    </div>`;
+  $("#copy").addEventListener("click",()=>{
+    const t=$("#code"); t.select(); t.setSelectionRange(0,99999);
+    try{document.execCommand("copy");$("#copy").textContent="Kopiert";}
+    catch(e){$("#copy").textContent="Bitte manuell markieren und kopieren";}
+    setTimeout(()=>{$("#copy").textContent="Auftragsschein kopieren";},2200);
+  });
+  $("#result").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ---- Ereignisse ---- */
+$("#slots").addEventListener("click",e=>{
+  const s=e.target.closest(".slot-btn");
+  if(s){openSlot = openSlot===s.dataset.slot ? null : s.dataset.slot; render(); return;}
+  const p=e.target.closest(".part");
+  if(p){
+    const kind=p.dataset.kind, item=PARTS[kind].find(x=>x.id===p.dataset.id);
+    build[kind] = (build[kind] && build[kind].id===item.id) ? null : item;
+    render();
+  }
+});
+$("#jobsel").addEventListener("change",e=>{
+  job=JOBS[+e.target.value];
+  build={cpu:null,mb:null,ram:null,gpu:null,ssd:null,cooler:null,psu:null,case:null};
+  openSlot=null; $("#result").className="result";
+  renderJob(); render(); window.scrollTo({top:0,behavior:"smooth"});
+});
+$("#live").addEventListener("change",e=>{live=e.target.checked;renderPane();});
+$("#abnahme").addEventListener("click",abnahme);
+$("#reset").addEventListener("click",()=>{
+  build={cpu:null,mb:null,ram:null,gpu:null,ssd:null,cooler:null,psu:null,case:null};
+  openSlot=null; $("#result").className="result"; render();
+});
+
+$("#jobsel").innerHTML=JOBS.map((j,i)=>`<option value="${i}">${j.no} · ${j.title}</option>`).join("");
+renderJob(); render();
+</script>
+</body>
+</html>
