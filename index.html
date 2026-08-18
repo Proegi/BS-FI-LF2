@@ -421,6 +421,27 @@ const JOBS = [
   {t:"Prozessor der Oberklasse (Ryzen 7/9 oder Core i7 aufwärts)", f:(b,c)=>b.cpu && b.cpu.multi>=78},
   {t:"NVMe-SSD mit mind. 1 TB", f:(b,c)=>b.ssd && b.ssd.iface==="M.2" && b.ssd.gb>=1000}
  ]
+},
+{
+ no:"A-2407", title:"Regieraum Tonstudio", budget:1300, hilfe:0, offen:true,
+ kunde:"Ein kleines Tonstudio ersetzt den Rechner im Regieraum. Gearbeitet wird mit einer DAW und großen Sample-Bibliotheken, die beim Öffnen eines Projekts komplett geladen werden; parallel laufen regelmäßig über sechzig Spuren mit Effekten. Der Rechner steht im selben Raum wie das Mikrofon. Der Inhaber sagt, das größte Problem am alten Gerät sei gewesen, dass man es auf leisen Aufnahmen gehört habe. Gespielt wird auf dem Gerät nicht, gerendert wird kein Video. Zwei Bildschirme sind vorhanden und sollen weiter genutzt werden.",
+ reqs:[
+  {t:"Mindestens 64 GB Arbeitsspeicher", f:(b,c)=>b.ram && b.ram.gb>=64},
+  {t:"Mindestens 12 Kerne", f:(b,c)=>b.cpu && b.cpu.cores>=12},
+  {t:"Höchstens 27 dB(A) im Betrieb", f:(b,c)=>b.cooler && b.case && c.db<=27},
+  {t:"Zwei Bildschirme ohne dedizierte Grafikkarte", f:(b,c)=>b.gpu && b.gpu.id==="g0" && c.disp>=2},
+  {t:"NVMe-SSD mit mind. 2 TB", f:(b,c)=>b.ssd && b.ssd.iface==="M.2" && b.ssd.gb>=2000}
+ ]
+},
+{
+ no:"A-2408", title:"Entwicklungsrechner KI-Startup", budget:2400, hilfe:0, offen:true,
+ kunde:"Ein Startup entwickelt Bilderkennung für die Qualitätskontrolle in der Fertigung. Trainiert wird auf gemieteter Rechenzeit, aber die Modelle sollen vor Ort getestet und auf Kundengeräte zugeschnitten werden – die Entwicklerin lädt dafür ganze Netze in den Grafikspeicher und beschwert sich, dass beim aktuellen Rechner regelmäßig mittendrin abgebrochen wird, weil es nicht hineinpasst. Nebenher laufen mehrere Container mit Testumgebungen. Die Trainingsdatensätze liegen lokal und wachsen mit jedem Kundenprojekt. Der Gründer sagt, am Budget solle es nicht scheitern, aber er wolle nichts bezahlen, was das Team nicht braucht – Bildschirme etwa habe man schon, gespielt werde nicht.",
+ reqs:[
+  {t:"Grafikkarte mit dem größten verfügbaren Speicher", f:(b,c)=>b.gpu && b.gpu.vram>=20},
+  {t:"Mindestens 64 GB Arbeitsspeicher", f:(b,c)=>b.ram && b.ram.gb>=64},
+  {t:"Mindestens 12 Kerne", f:(b,c)=>b.cpu && b.cpu.cores>=12},
+  {t:"NVMe-SSD mit mind. 4 TB", f:(b,c)=>b.ssd && b.ssd.iface==="M.2" && b.ssd.gb>=4000}
+ ]
 }
 ];
 
@@ -495,8 +516,10 @@ function renderJob(){
   $("#jobmeta").innerHTML=`
     <div><dt>Budget</dt><dd>${euro(job.budget)}</dd></div>
     <div><dt>Bauteile</dt><dd>${KINDS.length}</dd></div>
-    <div><dt>Anforderungen</dt><dd>${job.reqs.length}</dd></div>`;
-  $("#jobreqs").innerHTML=job.reqs.map(r=>`<li>${r.t}</li>`).join("");
+    <div><dt>Anforderungen</dt><dd>${job.offen?"?":job.reqs.length}</dd></div>`;
+  $("#jobreqs").innerHTML = job.offen
+    ? `<li>Die Anforderungen sind nicht aufgelistet. Leiten Sie sie aus dem Kundengespräch ab.</li>`
+    : job.reqs.map(r=>`<li>${r.t}</li>`).join("");
 }
 
 function renderSlots(){
@@ -716,7 +739,7 @@ function buildPrint(){
       : `<ul>${ch.map(k=>`<li>${k.state==="ok"?"[ok]":k.state==="bad"?"[FEHLER]":"[offen]"} ${k.label}${k.state==="bad"&&k.note&&h===2?" — "+k.note:""}</li>`).join("")}</ul>`}
 
     <h2>Kundenanforderungen</h2>
-    ${h<=1
+    ${h<=1||job.offen
       ? `<ul><li>${reqBad.length?"Nicht alle erfüllt — ohne Aufschlüsselung.":"Alle erfüllt."}</li></ul>`
       : `<ul>${rq.map(r=>`<li>${r.pass?"[erfüllt]":"[OFFEN]"} ${r.t}</li>`).join("")}</ul>`}
 
