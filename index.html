@@ -134,6 +134,10 @@ select{
 .check-note{font-family:var(--mono);font-size:11px;color:var(--bad);display:block;margin-top:2px}
 .st-ok .check-note{color:var(--ok)}
 .pane-foot{padding:14px}
+.stufe{font-size:9.5px;letter-spacing:.1em;color:var(--pink);text-transform:uppercase}
+.hinweis{font-size:13px;color:var(--ink-2);margin:0;line-height:1.6}
+.hinweis b{color:var(--ink)}
+.toggle input:disabled{cursor:not-allowed}
 .btn{
   font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
   width:100%;padding:12px;background:var(--pink);color:#fff;border:1px solid var(--pink);cursor:pointer;
@@ -172,10 +176,32 @@ select{
   background:var(--card-2);border:1px solid var(--line);padding:12px;color:var(--ink);resize:vertical;
 }
 .foot{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--ink-3);text-align:center;margin-top:26px;line-height:1.8}
+/* ---------- Druckansicht ---------- */
+#printview{display:none}
 @media print{
-  body{background:#fff;padding:0}
-  .parts,.pane-foot,.switcher,.abgabe{display:none!important}
-  .head,.result,.pane{box-shadow:none}
+  @page{size:A4;margin:14mm}
+  body{background:#fff;background-image:none;padding:0;font-size:11pt}
+  .sheet>*, .cols, .head, .result, .foot{display:none!important}
+  #printview{display:block!important}
+  #printview h1{font-size:16pt;margin:0 0 2mm}
+  #printview .pmeta{font-family:var(--mono);font-size:9pt;color:#000;margin:0 0 4mm}
+  #printview .pkunde{font-size:10pt;margin:0 0 5mm;max-width:none}
+  #printview table{width:100%;border-collapse:collapse;margin-bottom:5mm}
+  #printview th{font-family:var(--mono);font-size:8pt;letter-spacing:.1em;text-transform:uppercase;
+    text-align:left;border-bottom:1.2pt solid #000;padding:1.5mm 2mm 1.5mm 0}
+  #printview td{border-bottom:.4pt solid #999;padding:1.8mm 2mm 1.8mm 0;font-size:10pt;vertical-align:top}
+  #printview td.num{text-align:right;font-family:var(--mono);white-space:nowrap}
+  #printview .spec{font-family:var(--mono);font-size:8pt;color:#444;display:block}
+  #printview tfoot td{border-top:1.2pt solid #000;border-bottom:0;font-weight:700;font-family:var(--mono)}
+  #printview h2{font-family:var(--mono);font-size:9pt;letter-spacing:.12em;text-transform:uppercase;
+    margin:0 0 2mm;padding-bottom:1mm;border-bottom:.6pt solid #000}
+  #printview .kenn{display:flex;flex-wrap:wrap;gap:0 8mm;font-family:var(--mono);font-size:9.5pt;margin-bottom:5mm}
+  #printview ul{list-style:none;margin:0 0 5mm;padding:0}
+  #printview li{font-size:9.5pt;padding:1mm 0;border-bottom:.3pt dotted #aaa}
+  #printview .pstamp{border:2.5pt double #000;display:inline-block;padding:2mm 6mm;font-family:var(--mono);
+    font-weight:700;font-size:13pt;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4mm}
+  #printview .sign{margin-top:9mm;display:flex;gap:12mm;font-family:var(--mono);font-size:9pt}
+  #printview .sign div{border-top:.6pt solid #000;padding-top:1.5mm;flex:1}
 }
 </style>
 </head>
@@ -203,13 +229,12 @@ select{
     <main id="slots"></main>
     <aside>
       <div class="pane">
-        <h2>Prüfprotokoll
-          <span class="toggle"><input type="checkbox" id="live" checked><label for="live">Sofort&shy;feedback</label></span>
-        </h2>
+        <h2><span>Prüfprotokoll</span><span id="stufe" class="stufe"></span></h2>
         <section id="gauges"></section>
         <section><ul class="checks" id="checks"></ul></section>
         <div class="pane-foot">
           <button class="btn" id="abnahme">Abnahme prüfen</button>
+          <button class="btn ghost" id="pdf">Als PDF speichern</button>
           <button class="btn ghost" id="reset">Auftrag zurücksetzen</button>
         </div>
       </div>
@@ -217,6 +242,7 @@ select{
   </div>
 
   <div class="result" id="result"></div>
+  <div id="printview"></div>
 
   <p class="foot">
     Beispielpreise (Stand 2025) – im Quelltext im Abschnitt <b>DATEN</b> anpassbar.<br>
@@ -242,14 +268,14 @@ const KINDS = [
 
 const PARTS = {
 cpu:[
- {id:"c1",n:"AMD Ryzen 5 8500G",p:145,socket:"AM5",ram:"DDR5",cores:6,tdp:65,igpu:4,single:70,multi:55},
- {id:"c2",n:"Intel Core i3-14100",p:115,socket:"LGA1700",ram:"DDR5",cores:4,tdp:60,igpu:3,single:70,multi:38},
- {id:"c3",n:"Intel Core i5-14400",p:175,socket:"LGA1700",ram:"DDR5",cores:10,tdp:65,igpu:3,single:74,multi:62},
- {id:"c4",n:"AMD Ryzen 5 5600",p:95,socket:"AM4",ram:"DDR4",cores:6,tdp:65,igpu:0,single:64,multi:50},
- {id:"c5",n:"AMD Ryzen 7 9700X",p:340,socket:"AM5",ram:"DDR5",cores:8,tdp:65,igpu:2,single:92,multi:78},
- {id:"c6",n:"AMD Ryzen 7 9800X3D",p:520,socket:"AM5",ram:"DDR5",cores:8,tdp:120,igpu:2,single:95,multi:80},
- {id:"c7",n:"Intel Core i7-14700K",p:390,socket:"LGA1700",ram:"DDR5",cores:20,tdp:190,igpu:4,single:90,multi:92},
- {id:"c8",n:"AMD Ryzen 9 9950X",p:620,socket:"AM5",ram:"DDR5",cores:16,tdp:170,igpu:2,single:96,multi:100}
+ {id:"c1",n:"AMD Ryzen 5 8500G",p:145,socket:"AM5",ram:["DDR5"],cores:6,tdp:65,igpu:4,single:70,multi:55},
+ {id:"c2",n:"Intel Core i3-14100",p:115,socket:"LGA1700",ram:["DDR4","DDR5"],cores:4,tdp:60,igpu:3,single:70,multi:38},
+ {id:"c3",n:"Intel Core i5-14400",p:175,socket:"LGA1700",ram:["DDR4","DDR5"],cores:10,tdp:65,igpu:3,single:74,multi:62},
+ {id:"c4",n:"AMD Ryzen 5 5600",p:95,socket:"AM4",ram:["DDR4"],cores:6,tdp:65,igpu:0,single:64,multi:50},
+ {id:"c5",n:"AMD Ryzen 7 9700X",p:340,socket:"AM5",ram:["DDR5"],cores:8,tdp:65,igpu:2,single:92,multi:78},
+ {id:"c6",n:"AMD Ryzen 7 9800X3D",p:520,socket:"AM5",ram:["DDR5"],cores:8,tdp:120,igpu:2,single:95,multi:80},
+ {id:"c7",n:"Intel Core i7-14700K",p:390,socket:"LGA1700",ram:["DDR4","DDR5"],cores:20,tdp:190,igpu:4,single:90,multi:92},
+ {id:"c8",n:"AMD Ryzen 9 9950X",p:620,socket:"AM5",ram:["DDR5"],cores:16,tdp:170,igpu:2,single:96,multi:100}
 ],
 mb:[
  {id:"m1",n:"A620M (Micro-ATX)",p:85,socket:"AM5",ram:"DDR5",slots:2,maxram:64,form:"mATX",out:2},
@@ -315,12 +341,12 @@ case:[
 
 /* Kurzbeschreibung je Bauteil für die Auswahlliste */
 const SPEC = {
- cpu:x=>`${x.socket} · ${x.cores} Kerne · ${x.tdp} W · interne Grafik: ${x.igpu?x.igpu+" Anzeigen":"nein"} · ${x.ram}`,
+ cpu:x=>`${x.socket} · ${x.cores} Kerne · TDP ${x.tdp} W · interne Grafik: ${x.igpu?x.igpu+" Anzeigen":"nein"} · Speichercontroller: ${x.ram.join("/")}`,
  mb:x=>`${x.socket} · ${x.ram} · ${x.slots} Bänke, max. ${x.maxram} GB · ${x.form} · ${x.out} Bildanschlüsse`,
  ram:x=>`${x.type} · ${x.gb} GB auf ${x.mods} Modul${x.mods>1?"en":""}`,
  gpu:x=>x.id==="g0"?"keine Zusatzkarte · 0 W":`${x.vram} GB · ${x.len} mm · ${x.tdp} W · Encoder: ${x.enc?"ja":"nein"} · Treiber: ${x.cert?"zertifiziert (CAD)":"Consumer"}`,
  ssd:x=>`${x.typ} · ${x.gb>=1000?x.gb/1000+" TB":x.gb+" GB"} · ${x.iface} · ${x.read} MB/s`,
- cooler:x=>`bis ${x.maxtdp} W · ${x.rad?"Radiator "+x.rad+" mm":"Bauhöhe "+x.h+" mm"} · ca. ${x.db} dB(A)`,
+ cooler:x=>`für TDP bis ${x.maxtdp} W · ${x.rad?"Radiator "+x.rad+" mm":"Bauhöhe "+x.h+" mm"} · ca. ${x.db} dB(A)`,
  psu:x=>`${x.w} W · 80 PLUS ${x.eff} · Bauform ${x.form}`,
  case:x=>`${x.forms.join("/")} · GraKa ≤ ${x.gpulen} mm · Kühler ≤ ${x.coolh} mm · ${x.rad?"Radiator ≤ "+x.rad+" mm":"kein Radiator"} · Netzteil ${x.psu} · ${x.vol} l${x.damp?" · gedämmt":""}`
 };
@@ -328,7 +354,7 @@ const SPEC = {
 /* ---- Aufträge ---- */
 const JOBS = [
 {
- no:"A-2401", title:"Büroarbeitsplatz Steuerkanzlei", budget:500,
+ no:"A-2401", title:"Büroarbeitsplatz Steuerkanzlei", budget:500, hilfe:2,
  kunde:"Die Kanzlei ersetzt zwölf alte Rechner. Gearbeitet wird mit DATEV, Office und Browser, jeweils an zwei Bildschirmen. Die Geräte stehen im Beratungsraum und sollen dort nicht auffallen – weder optisch noch akustisch.",
  reqs:[
   {t:"Mindestens 16 GB Arbeitsspeicher", f:(b,c)=>b.ram && b.ram.gb>=16},
@@ -340,7 +366,7 @@ const JOBS = [
  ]
 },
 {
- no:"A-2402", title:"Kassen-PC Einzelhandel", budget:560,
+ no:"A-2402", title:"Kassen-PC Einzelhandel", budget:560, hilfe:2,
  kunde:"Ein Bioladen braucht einen Rechner für die Kassensoftware. Das Gerät läuft von 7 bis 20 Uhr durch, steht unter der Theke und hat dort kaum Platz. Der Betreiber achtet auf den Stromverbrauch.",
  reqs:[
   {t:"Gehäusevolumen höchstens 20 l", f:(b,c)=>b.case && b.case.vol<=20},
@@ -351,30 +377,30 @@ const JOBS = [
  ]
 },
 {
- no:"A-2403", title:"Gaming-PC Privatkunde", budget:1500,
+ no:"A-2403", title:"Gaming-PC Privatkunde", budget:1500, hilfe:1,
  kunde:"Ein Kunde möchte aktuelle Titel in 2560 × 1440 flüssig spielen. Beleuchtung und Optik sind ihm egal, die Bildrate nicht. Er fragt ausdrücklich, ob das Budget ausgereizt werden muss.",
  reqs:[
-  {t:"Grafikleistung mind. 65 Punkte", f:(b,c)=>b.gpu && b.gpu.score>=65,
+  {t:"Spielekarte der Oberklasse, mind. 12 GB (kein Workstation-Modell)", f:(b,c)=>b.gpu && b.gpu.score>=65,
    why:"Für 1440p mit hohen Details reicht eine Einsteigerkarte nicht."},
-  {t:"CPU-Einzelkernleistung mind. 88 Punkte", f:(b,c)=>b.cpu && b.cpu.single>=88,
+  {t:"Prozessor der Oberklasse (Ryzen 7/9 oder Core i7 aufwärts)", f:(b,c)=>b.cpu && b.cpu.single>=88,
    why:"Spiele hängen überwiegend an der Einzelkernleistung, nicht an der Kernzahl."},
   {t:"Mindestens 32 GB Arbeitsspeicher", f:(b,c)=>b.ram && b.ram.gb>=32},
   {t:"NVMe-SSD mit mind. 1 TB", f:(b,c)=>b.ssd && b.ssd.iface==="M.2" && b.ssd.gb>=1000}
  ]
 },
 {
- no:"A-2404", title:"Schnittplatz Mediengestaltung", budget:1400,
+ no:"A-2404", title:"Schnittplatz Mediengestaltung", budget:1400, hilfe:1,
  kunde:"Eine Agentur schneidet 4K-Material und rendert täglich. Das Rohmaterial liegt lokal auf dem Rechner, gearbeitet wird mit Adobe Premiere und DaVinci Resolve.",
  reqs:[
   {t:"Mindestens 32 GB Arbeitsspeicher", f:(b,c)=>b.ram && b.ram.gb>=32},
   {t:"Grafikkarte mit Hardware-Encoder, mind. 8 GB", f:(b,c)=>b.gpu && b.gpu.enc && b.gpu.vram>=8,
    why:"Der Encoder der Grafikkarte übernimmt das Ausgeben der fertigen Videodatei."},
   {t:"NVMe-SSD mind. 2 TB und 5000 MB/s", f:(b,c)=>b.ssd && b.ssd.iface==="M.2" && b.ssd.gb>=2000 && b.ssd.read>=5000},
-  {t:"CPU-Mehrkernleistung mind. 70 Punkte", f:(b,c)=>b.cpu && b.cpu.multi>=70}
+  {t:"Prozessor der Oberklasse (Ryzen 7/9 oder Core i7 aufwärts)", f:(b,c)=>b.cpu && b.cpu.multi>=70}
  ]
 },
 {
- no:"A-2405", title:"Entwicklungsrechner Homeoffice", budget:1350,
+ no:"A-2405", title:"Entwicklungsrechner Homeoffice", budget:1350, hilfe:0,
  kunde:"Eine Softwareentwicklerin betreibt mehrere virtuelle Maschinen parallel und kompiliert große Projekte. Sie arbeitet an einem Monitor, spielt nicht und will nachts nicht vom Lüfter geweckt werden.",
  reqs:[
   {t:"Mindestens 64 GB Arbeitsspeicher", f:(b,c)=>b.ram && b.ram.gb>=64,
@@ -386,14 +412,14 @@ const JOBS = [
  ]
 },
 {
- no:"A-2406", title:"CAD-Workstation Ingenieurbüro", budget:2100,
+ no:"A-2406", title:"CAD-Workstation Ingenieurbüro", budget:2100, hilfe:0,
  kunde:"Das Büro konstruiert Baugruppen in SolidWorks und rechnet Simulationen. Der Hersteller schreibt zertifizierte Grafiktreiber und mindestens 12 GB Grafikspeicher vor.",
  reqs:[
   {t:"Mindestens 64 GB Arbeitsspeicher", f:(b,c)=>b.ram && b.ram.gb>=64},
   {t:"Grafikkarte mit mind. 12 GB Speicher", f:(b,c)=>b.gpu && b.gpu.vram>=12},
   {t:"Zertifizierte Grafiktreiber (Herstellervorgabe)", f:(b,c)=>b.gpu && b.gpu.cert===true,
    why:"Der CAD-Hersteller gibt den Treiber vor – eine Spielekarte ist hier nicht freigegeben."},
-  {t:"CPU-Mehrkernleistung mind. 78 Punkte", f:(b,c)=>b.cpu && b.cpu.multi>=78},
+  {t:"Prozessor der Oberklasse (Ryzen 7/9 oder Core i7 aufwärts)", f:(b,c)=>b.cpu && b.cpu.multi>=78},
   {t:"NVMe-SSD mit mind. 1 TB", f:(b,c)=>b.ssd && b.ssd.iface==="M.2" && b.ssd.gb>=1000}
  ]
 }
@@ -406,7 +432,6 @@ const $ = s=>document.querySelector(s);
 let job = JOBS[0];
 let build = {cpu:null,mb:null,ram:null,gpu:null,ssd:null,cooler:null,psu:null,case:null};
 let openSlot = null;
-let live = true;
 
 function calc(){
   const b=build;
@@ -427,7 +452,9 @@ function checks(){
 
   add("sockel","Sockel CPU ↔ Mainboard", b.cpu&&b.mb, b.cpu&&b.mb&&b.cpu.socket===b.mb.socket,
       b.cpu&&b.mb?`${b.cpu.socket} ≠ ${b.mb.socket}`:"");
-  add("ramtyp","Speichertyp", b.ram&&b.mb, b.ram&&b.mb&&b.ram.type===b.mb.ram,
+  add("ramcpu","Speichercontroller CPU ↔ Mainboard", b.cpu&&b.mb, b.cpu&&b.mb&&b.cpu.ram.includes(b.mb.ram),
+      b.cpu&&b.mb?`CPU kann ${b.cpu.ram.join("/")}, Board hat ${b.mb.ram}-Bänke`:"");
+  add("ramtyp","Speichertyp Riegel ↔ Bänke", b.ram&&b.mb, b.ram&&b.mb&&b.ram.type===b.mb.ram,
       b.ram&&b.mb?`${b.ram.type} passt nicht in ${b.mb.ram}-Bänke`:"");
   add("rambest","Speicherbestückung", b.ram&&b.mb, b.ram&&b.mb&&b.ram.mods<=b.mb.slots&&b.ram.gb<=b.mb.maxram,
       b.ram&&b.mb?`${b.ram.mods} Module / ${b.ram.gb} GB, Board: ${b.mb.slots} Bänke / max. ${b.mb.maxram} GB`:"");
@@ -437,7 +464,7 @@ function checks(){
       b.gpu&&b.case?`${b.gpu.len} mm > ${b.case.gpulen} mm`:"");
   add("kuehl","Kühler: Sockel und Kühlleistung", b.cooler&&b.cpu,
       b.cooler&&b.cpu&&b.cooler.sockets.includes(b.cpu.socket)&&b.cooler.maxtdp>=b.cpu.tdp,
-      b.cooler&&b.cpu?(!b.cooler.sockets.includes(b.cpu.socket)?`kein Halter für ${b.cpu.socket}`:`ausgelegt bis ${b.cooler.maxtdp} W, CPU gibt ${b.cpu.tdp} W ab`):"");
+      b.cooler&&b.cpu?(!b.cooler.sockets.includes(b.cpu.socket)?`kein Halter für ${b.cpu.socket}`:`Kühler für TDP bis ${b.cooler.maxtdp} W, CPU hat TDP ${b.cpu.tdp} W`):"");
   add("kuehlbau","Kühler: Einbaumaß", b.cooler&&b.case,
       b.cooler&&b.case&&(b.cooler.rad? b.case.rad>=b.cooler.rad : b.cooler.h<=b.case.coolh),
       b.cooler&&b.case?(b.cooler.rad?`Radiator ${b.cooler.rad} mm, Gehäuse nimmt ${b.case.rad||0} mm auf`:`${b.cooler.h} mm > ${b.case.coolh} mm`):"");
@@ -496,10 +523,15 @@ function renderSlots(){
   }).join("");
 }
 
+const HILFE_TEXT = {2:"Stufe 1", 1:"Stufe 2", 0:"Stufe 3"};
+
 function renderPane(){
   const c=calc();
+  const h=job.hilfe;
   const pct=Math.min(100,job.budget?c.price/job.budget*100:0);
-  $("#gauges").innerHTML=`
+  $("#stufe").textContent=HILFE_TEXT[h];
+
+  const gBudget=`
     <div class="gauge">
       <div class="gauge-top"><span>Summe</span><span>Budget ${euro(job.budget)}</span></div>
       <div class="gauge-val">${euro(c.price)}${c.price>job.budget?" ⚠":""}</div>
@@ -508,6 +540,28 @@ function renderPane(){
     <div class="gauge">
       <div class="gauge-top"><span>Leistungsaufnahme</span><span>+30 % Reserve</span></div>
       <div class="gauge-val">${c.watt} W → ${c.need} W</div>
+    </div>`;
+
+  if(h===0){
+    const done=Object.values(build).filter(Boolean).length;
+    $("#gauges").innerHTML=`<p class="hinweis">Für diesen Auftrag gibt es keine laufende Rückmeldung.<br>
+      Rechnen Sie Summe, Leistungsaufnahme und Kompatibilität selbst nach.<br>
+      <b>${done} von ${KINDS.length}</b> Bauteilen gewählt.</p>`;
+    $("#checks").innerHTML="";
+    return;
+  }
+  if(h===1){
+    $("#gauges").innerHTML=gBudget;
+    $("#checks").innerHTML=`<li class="st-open"><span class="mark">·</span><span>Kompatibilität wird erst bei der Abnahme geprüft.</span></li>`;
+    return;
+  }
+
+  $("#gauges").innerHTML=`
+    ${gBudget}
+    <div class="gauge">
+      <div class="gauge-top"><span>Kühlung</span><span>TDP ↔ Kühlerreserve</span></div>
+      <div class="gauge-val">${build.cpu?build.cpu.tdp+" W":"–"} ${build.cpu&&build.cooler?"→ "+build.cooler.maxtdp+" W":""}${build.cpu&&build.cooler?(build.cooler.maxtdp>=build.cpu.tdp?" ✓":" ⚠"):""}</div>
+      ${build.cpu&&build.cooler?`<div class="bar ${build.cpu.tdp>build.cooler.maxtdp?"over":""}"><i style="width:${Math.min(100,build.cpu.tdp/build.cooler.maxtdp*100)}%"></i></div>`:""}
     </div>
     <div class="gauge">
       <div class="gauge-top"><span>Geräusch (Schätzwert)</span></div>
@@ -518,11 +572,6 @@ function renderPane(){
       <div class="gauge-val">${c.disp||"–"}</div>
     </div>`;
 
-  if(!live){
-    const done=Object.values(build).filter(Boolean).length;
-    $("#checks").innerHTML=`<li class="st-open"><span class="mark">·</span><span>Sofortfeedback ist aus. ${done} von ${KINDS.length} Bauteilen gewählt – Prüfung erfolgt bei der Abnahme.</span></li>`;
-    return;
-  }
   $("#checks").innerHTML = checks().map(k=>`
     <li class="st-${k.state}">
       <span class="mark">${k.state==="ok"?"✓":k.state==="bad"?"✗":"·"}</span>
@@ -541,21 +590,31 @@ function abnahme(){
   const alleGewaehlt = Object.values(build).every(Boolean);
   const pass = alleGewaehlt && compatBad.length===0 && reqBad.length===0;
 
+  const h=job.hilfe;
   let verdict;
   if(!alleGewaehlt){
     verdict=`Der Auftrag ist unvollständig: <b>${KINDS.length-Object.values(build).filter(Boolean).length} Bauteil(e)</b> fehlen noch.`;
   }else if(pass){
     const rest=job.budget-c.price, quote=Math.round(c.price/job.budget*100);
     verdict=`Alle Prüfpunkte bestanden, alle Kundenanforderungen erfüllt.<br>Auftragssumme <b>${euro(c.price)}</b> – das sind <b>${quote} %</b> des Budgets, Rest <b>${euro(rest)}</b>.<br>${quote<=85?"Wirtschaftlich sauber gerechnet.":"Erfüllt, aber teuer: Prüfen Sie, wo ohne Funktionsverlust gespart werden kann."}`;
+  }else if(h<=1){
+    verdict=`Die Konfiguration ist nicht abnahmefähig. Prüfen Sie Kompatibilität, Kundenanforderungen und Budget noch einmal selbst durch.`;
   }else{
     verdict=`<b>${compatBad.length}</b> Prüfpunkt(e) und <b>${reqBad.length}</b> Kundenanforderung(en) sind offen. Der Rechner geht so nicht raus.`;
   }
 
-  const findings = [
-    ...compatBad.map(k=>({bad:true,h:k.label,p:k.note||"Die gewählten Bauteile passen an dieser Stelle nicht zusammen."})),
-    ...reqBad.map(r=>({bad:true,h:"Kundenanforderung",p:r.t+(r.why?" – "+r.why:"")})),
-    ...(pass?[{bad:false,h:"Abnahme",p:"Konfiguration ist stimmig, vollständig und im Budget. Auftrag kann in die Fertigung."}]:[])
-  ];
+  let findings;
+  if(pass){
+    findings=[{bad:false,h:"Abnahme",p:"Konfiguration ist stimmig, vollständig und im Budget. Auftrag kann in die Fertigung."}];
+  }else if(h===2){
+    findings=[
+      ...compatBad.map(k=>({bad:true,h:k.label,p:k.note||"Die gewählten Bauteile passen an dieser Stelle nicht zusammen."})),
+      ...reqBad.map(r=>({bad:true,h:"Kundenanforderung",p:r.t+(r.why?" – "+r.why:"")}))
+    ];
+  }else{
+    findings=[{bad:true,h:"Nacharbeit erforderlich",
+      p:"Für diesen Auftrag wird nicht aufgeschlüsselt, woran es liegt. Gehen Sie die Anforderungen des Kunden und die Datenblätter der Bauteile Punkt für Punkt durch."}];
+  }
 
   const codeLines = KINDS.map(k=>`${k.label.padEnd(18,".")} ${build[k.key]?build[k.key].n+"  "+euro(build[k.key].p):"— fehlt"}`);
   const code =
@@ -565,8 +624,9 @@ Budget ${euro(job.budget)}
 ${codeLines.join("\n")}
 --------------------------------------------
 Summe ${euro(c.price)} | Last ${c.watt} W (Netzteil ab ${c.need} W) | ${c.db} dB(A) | ${c.disp} Bildschirme
-Kompatibilität: ${compatBad.length===0?"bestanden":compatBad.map(k=>k.label).join("; ")}
-Anforderungen:  ${reqBad.length===0?"erfüllt":reqBad.map(r=>r.t).join("; ")}
+CPU-TDP ${build.cpu?build.cpu.tdp+" W":"—"} | Kuehler ausgelegt bis ${build.cooler?build.cooler.maxtdp+" W":"—"}
+Kompatibilität: ${compatBad.length===0?"bestanden":(h<=1?"nicht bestanden":compatBad.map(k=>k.label).join("; "))}
+Anforderungen:  ${reqBad.length===0?"erfüllt":(h<=1?"nicht erfüllt":reqBad.map(r=>r.t).join("; "))}
 Ergebnis: ${pass?"ABGENOMMEN":"NICHT ABGENOMMEN"}
 Name: ______________________  Datum: __________`;
 
@@ -612,8 +672,64 @@ $("#jobsel").addEventListener("change",e=>{
   openSlot=null; $("#result").className="result";
   renderJob(); render(); window.scrollTo({top:0,behavior:"smooth"});
 });
-$("#live").addEventListener("change",e=>{live=e.target.checked;renderPane();});
+function buildPrint(){
+  const c=calc(), ch=checks(), rq=reqStates();
+  const alle=Object.values(build).every(Boolean);
+  const compatBad=ch.filter(k=>k.state==="bad");
+  const reqBad=rq.filter(r=>!r.pass);
+  const pass=alle&&!compatBad.length&&!reqBad.length;
+  const h=job.hilfe;
+  const heute=new Date().toLocaleDateString("de-DE");
+
+  const rows=KINDS.map(k=>{
+    const b=build[k.key];
+    return `<tr><td>${k.label}</td>
+      <td>${b?b.n+`<span class="spec">${SPEC[k.key](b)}</span>`:"<i>nicht gewählt</i>"}</td>
+      <td class="num">${b?euro(b.p):"–"}</td></tr>`;
+  }).join("");
+
+  $("#printview").innerHTML=`
+    <h1>${job.title}</h1>
+    <p class="pmeta">Werkstattauftrag ${job.no} · Budget ${euro(job.budget)} · Ausgedruckt am ${heute}</p>
+    <p class="pkunde">${job.kunde}</p>
+
+    <h2>Gewählte Bauteile</h2>
+    <table>
+      <thead><tr><th>Baugruppe</th><th>Bauteil</th><th style="text-align:right">Preis</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td colspan="2">Auftragssumme</td>
+        <td class="num">${euro(c.price)}${c.price>job.budget?" (über Budget)":""}</td></tr></tfoot>
+    </table>
+
+    <h2>Kennwerte</h2>
+    <div class="kenn">${h===0?`<span>Für diesen Auftrag ohne berechnete Kennwerte.</span></div><div style="display:none">`:""}
+      <span>Leistungsaufnahme ${c.watt} W</span>
+      <span>Netzteil ab ${c.need} W</span>
+      <span>CPU-TDP ${build.cpu?build.cpu.tdp+" W":"—"}</span>
+      <span>Kühler bis ${build.cooler?build.cooler.maxtdp+" W":"—"}</span>
+      <span>${c.db||"—"} dB(A)</span>
+      <span>${c.disp} Bildschirme</span>
+    </div>
+
+    <h2>Kompatibilitätsprüfung</h2>
+    ${h<=1
+      ? `<ul><li>${compatBad.length?"Nicht bestanden — die Prüfpunkte werden für diesen Auftrag nicht aufgeschlüsselt.":"Bestanden."}</li></ul>`
+      : `<ul>${ch.map(k=>`<li>${k.state==="ok"?"[ok]":k.state==="bad"?"[FEHLER]":"[offen]"} ${k.label}${k.state==="bad"&&k.note&&h===2?" — "+k.note:""}</li>`).join("")}</ul>`}
+
+    <h2>Kundenanforderungen</h2>
+    ${h<=1
+      ? `<ul><li>${reqBad.length?"Nicht alle erfüllt — ohne Aufschlüsselung.":"Alle erfüllt."}</li></ul>`
+      : `<ul>${rq.map(r=>`<li>${r.pass?"[erfüllt]":"[OFFEN]"} ${r.t}</li>`).join("")}</ul>`}
+
+    <h2>Ergebnis</h2>
+    <div class="pstamp">${alle?(pass?"Abgenommen":"Nacharbeit"):"Unvollständig"}</div>
+    <div class="sign">
+      <div>Name, Klasse</div><div>Datum</div><div>Unterschrift Lehrkraft</div>
+    </div>`;
+}
+
 $("#abnahme").addEventListener("click",abnahme);
+$("#pdf").addEventListener("click",()=>{buildPrint();window.print();});
 $("#reset").addEventListener("click",()=>{
   build={cpu:null,mb:null,ram:null,gpu:null,ssd:null,cooler:null,psu:null,case:null};
   openSlot=null; $("#result").className="result"; render();
