@@ -760,5 +760,47 @@ $("#reset").addEventListener("click",()=>{
 $("#jobsel").innerHTML=JOBS.map((j,i)=>`<option value="${i}">${j.no} · ${j.title}</option>`).join("");
 renderJob(); render();
 </script>
+<!-- vt-speicher -->
+<script>
+/* Auftragsstand speichern: Auftrag und gewaehlte Bauteile bleiben beim Neuladen erhalten */
+(function(){
+  var KEY = 'bsfi-werkstattauftrag:stand';
+  var store = null;
+  try { store = window.localStorage; store.setItem(KEY + '_t', '1'); store.removeItem(KEY + '_t'); }
+  catch (e) { store = null; }
+  if (!store) { return; }
+
+  function save(){
+    var b = {};
+    Object.keys(build).forEach(function(k){ if (build[k]) { b[k] = build[k].id; } });
+    var j = JOBS.indexOf(job);
+    try {
+      if (j <= 0 && !Object.keys(b).length) { store.removeItem(KEY); }
+      else { store.setItem(KEY, JSON.stringify({ j: j, b: b })); }
+    } catch (e) {}
+  }
+
+  try {
+    var raw = store.getItem(KEY);
+    if (raw) {
+      var d = JSON.parse(raw);
+      if (d.j >= 0 && d.j < JOBS.length) {
+        job = JOBS[d.j];
+        document.getElementById('jobsel').value = String(d.j);
+      }
+      Object.keys(d.b || {}).forEach(function(k){
+        var item = (PARTS[k] || []).filter(function(x){ return x.id === d.b[k]; })[0];
+        if (item) { build[k] = item; }
+      });
+      renderJob();
+      render();
+    }
+  } catch (e) {}
+
+  var origRender = render;
+  render = function(){ origRender(); save(); };
+  window.addEventListener('pagehide', save);
+})();
+</script>
 </body>
 </html>
